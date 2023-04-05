@@ -1,0 +1,112 @@
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/dist-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
+    executenb(
+  File "/usr/local/lib/python3.9/dist-packages/nbclient/client.py", line 1204, in execute
+    return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
+  File "/usr/local/lib/python3.9/dist-packages/nbclient/util.py", line 84, in wrapped
+    return just_run(coro(*args, **kwargs))
+  File "/usr/local/lib/python3.9/dist-packages/nbclient/util.py", line 62, in just_run
+    return loop.run_until_complete(coro)
+  File "/usr/lib/python3.9/asyncio/base_events.py", line 647, in run_until_complete
+    return future.result()
+  File "/usr/local/lib/python3.9/dist-packages/nbclient/client.py", line 663, in async_execute
+    await self.async_execute_cell(
+  File "/usr/local/lib/python3.9/dist-packages/nbclient/client.py", line 965, in async_execute_cell
+    await self._check_raise_for_error(cell, cell_index, exec_reply)
+  File "/usr/local/lib/python3.9/dist-packages/nbclient/client.py", line 862, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+# a. postgres local
+import psycopg2
+import pandas as pd
+# Connection parameters, yours will be different
+param_dic = {
+    "host"      : "localhost",
+    "database"  : "sepallength",
+    "user"      : "postgres",
+    "password"  : "natul",
+    "port"      : 5432
+}
+def connect(params_dic):
+    """ Connect to the PostgreSQL database server """
+    conn = None
+    try:
+        # connect to the PostgreSQL server
+        print('Connecting to the PostgreSQL database...')
+        conn = psycopg2.connect(**params_dic)
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        sys.exit(1) 
+    print("Connection successful")
+    return conn
+
+def postgresql_to_dataframe(conn, select_query, column_names):
+    """
+    Tranform a SELECT query into a pandas dataframe
+    """
+    cursor = conn.cursor()
+    try:
+        cursor.execute(select_query)
+    except (Exception, psycopg2.DatabaseError) as error:
+        print("Error: %s" % error)
+        cursor.close()
+        return 1
+    
+    # Naturally we get a list of tupples
+    tupples = cursor.fetchall()
+    cursor.close()
+    
+    # We just need to turn it into a pandas dataframe
+    df = pd.DataFrame(tupples, columns=column_names)
+    return df
+
+# Connect to the database
+conn = connect(param_dic)
+
+column_names = ["id", "sepallength"]
+
+df_sl = postgresql_to_dataframe(conn, "select * from iris", column_names)
+
+------------------
+
+[0;31m[0m
+[0;31mOperationalError[0mTraceback (most recent call last)
+[0;32m<ipython-input-1-230e7f833444>[0m in [0;36mconnect[0;34m(params_dic)[0m
+[1;32m     17[0m         [0mprint[0m[0;34m([0m[0;34m'Connecting to the PostgreSQL database...'[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0;32m---> 18[0;31m         [0mconn[0m [0;34m=[0m [0mpsycopg2[0m[0;34m.[0m[0mconnect[0m[0;34m([0m[0;34m**[0m[0mparams_dic[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0m[1;32m     19[0m     [0;32mexcept[0m [0;34m([0m[0mException[0m[0;34m,[0m [0mpsycopg2[0m[0;34m.[0m[0mDatabaseError[0m[0;34m)[0m [0;32mas[0m [0merror[0m[0;34m:[0m[0;34m[0m[0;34m[0m[0m
+
+[0;32m/usr/local/lib/python3.9/dist-packages/psycopg2/__init__.py[0m in [0;36mconnect[0;34m(dsn, connection_factory, cursor_factory, **kwargs)[0m
+[1;32m    121[0m     [0mdsn[0m [0;34m=[0m [0m_ext[0m[0;34m.[0m[0mmake_dsn[0m[0;34m([0m[0mdsn[0m[0;34m,[0m [0;34m**[0m[0mkwargs[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0;32m--> 122[0;31m     [0mconn[0m [0;34m=[0m [0m_connect[0m[0;34m([0m[0mdsn[0m[0;34m,[0m [0mconnection_factory[0m[0;34m=[0m[0mconnection_factory[0m[0;34m,[0m [0;34m**[0m[0mkwasync[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0m[1;32m    123[0m     [0;32mif[0m [0mcursor_factory[0m [0;32mis[0m [0;32mnot[0m [0;32mNone[0m[0;34m:[0m[0;34m[0m[0;34m[0m[0m
+
+[0;31mOperationalError[0m: could not connect to server: Connection refused
+	Is the server running on host "localhost" (127.0.0.1) and accepting
+	TCP/IP connections on port 5432?
+could not connect to server: Cannot assign requested address
+	Is the server running on host "localhost" (::1) and accepting
+	TCP/IP connections on port 5432?
+
+
+During handling of the above exception, another exception occurred:
+
+[0;31mNameError[0mTraceback (most recent call last)
+[0;32m<ipython-input-1-230e7f833444>[0m in [0;36m<cell line: 46>[0;34m()[0m
+[1;32m     44[0m [0;34m[0m[0m
+[1;32m     45[0m [0;31m# Connect to the database[0m[0;34m[0m[0;34m[0m[0m
+[0;32m---> 46[0;31m [0mconn[0m [0;34m=[0m [0mconnect[0m[0;34m([0m[0mparam_dic[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0m[1;32m     47[0m [0;34m[0m[0m
+[1;32m     48[0m [0mcolumn_names[0m [0;34m=[0m [0;34m[[0m[0;34m"id"[0m[0;34m,[0m [0;34m"sepallength"[0m[0;34m][0m[0;34m[0m[0;34m[0m[0m
+
+[0;32m<ipython-input-1-230e7f833444>[0m in [0;36mconnect[0;34m(params_dic)[0m
+[1;32m     19[0m     [0;32mexcept[0m [0;34m([0m[0mException[0m[0;34m,[0m [0mpsycopg2[0m[0;34m.[0m[0mDatabaseError[0m[0;34m)[0m [0;32mas[0m [0merror[0m[0;34m:[0m[0;34m[0m[0;34m[0m[0m
+[1;32m     20[0m         [0mprint[0m[0;34m([0m[0merror[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0;32m---> 21[0;31m         [0msys[0m[0;34m.[0m[0mexit[0m[0;34m([0m[0;36m1[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0m[1;32m     22[0m     [0mprint[0m[0;34m([0m[0;34m"Connection successful"[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[1;32m     23[0m     [0;32mreturn[0m [0mconn[0m[0;34m[0m[0;34m[0m[0m
+
+[0;31mNameError[0m: name 'sys' is not defined
+NameError: name 'sys' is not defined
+
